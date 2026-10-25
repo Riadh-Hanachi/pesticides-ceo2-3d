@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pesticides nitrés et CeO₂ en 3D</title>
+<meta name="description" content="Visualisation 3D interactive des orbitales frontières du méthyl-parathion et de l'imidaclopride, et de leur adsorption sur CeO₂(111), calculées par DFT.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : onglets en tete, barre de controle, grand canevas 3D partage et fiche a droite (empilee sur mobile) */
+:root {
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --fg: #1b2530;
+  --muted: #5b6875;
+  --line: #d6dde4;
+  --accent: #1f5f99;
+  --pos: #2a6fb0;      /* lobe positif */
+  --neg: #c2413b;      /* lobe negatif */
+  --canvas: #ffffff;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161c; --panel: #18202a; --fg: #e4e9ee; --muted: #93a1ae; --line: #2a3542;
+    --accent: #7fb3e6; --pos: #5a9be0; --neg: #e0645d; --canvas: #0d1217; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161c; --panel: #18202a; --fg: #e4e9ee; --muted: #93a1ae; --line: #2a3542;
+  --accent: #7fb3e6; --pos: #5a9be0; --neg: #e0645d; --canvas: #0d1217; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 32px; display: grid; gap: 16px; }
+header h1 { font-size: 1.45rem; font-weight: 600; margin: 0; text-wrap: balance; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 72ch; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 500; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted);
+  padding: 8px 14px; cursor: pointer; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { font: inherit; font-size: 0.9rem; border: 0; background: transparent; color: var(--fg); padding: 7px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--panel); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { font: inherit; font-size: 0.9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); padding: 7px 14px; cursor: pointer; }
+label.iso { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); }
+label.iso output { font-family: var(--font-mono); color: var(--fg); min-width: 4ch; font-variant-numeric: tabular-nums; }
+label.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--muted); }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 16px; }
+@media (max-width: 820px) { .main { grid-template-columns: minmax(0, 1fr); } }
+#view { position: relative; width: 100%; aspect-ratio: 4 / 3; max-width: 100%; background: var(--canvas); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+#status { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 0.95rem; pointer-events: none; text-align: center; padding: 16px; z-index: 2; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card h2 { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+dt { color: var(--muted); font-size: 0.88rem; }
+dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; font-size: 0.9rem; }
+.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--accent); }
+.legend { display: flex; gap: 8px 14px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+.dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--line); }
+.note { font-size: 0.86rem; color: var(--muted); margin: 0; }
+footer { font-size: 0.82rem; color: var(--muted); display: grid; gap: 4px; }
+footer p { margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Pesticides nitrés et CeO₂(111) en 3D</h1>
+    <p>Orbitales frontières du méthyl-parathion et de l'imidaclopride, et adsorption de ces pesticides sur la surface (111) de l'oxyde de cérium, calculées par DFT. Faites tourner à la souris ou au doigt, zoomez à la molette ou en pinçant.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Visualisation">
+    <button id="tab-orb" role="tab" aria-selected="true" data-mode="orb">Orbitales des pesticides</button>
+    <button id="tab-surf" role="tab" aria-selected="false" data-mode="surf">Surfaces CeO₂(111)</button>
+  </div>
+
+  <!-- controles : orbitales -->
+  <div class="controls" id="ctl-orb">
+    <div class="seg" role="group" aria-label="Molécule">
+      <button aria-pressed="true" data-mol="methyl_parathion">Méthyl-parathion</button>
+      <button aria-pressed="false" data-mol="imidacloprid">Imidaclopride</button>
+    </div>
+    <div class="seg" role="group" aria-label="Orbitale">
+      <button aria-pressed="true" data-orb="LUMO">LUMO</button>
+      <button aria-pressed="false" data-orb="HOMO">HOMO</button>
+    </div>
+    <label class="iso" for="iso">Isovaleur ±
+      <input id="iso" type="range" min="0.01" max="0.08" step="0.005" value="0.03">
+      <output id="isoval">0,030</output>
+    </label>
+    <label class="chk" for="hl"><input id="hl" type="checkbox" checked> Repérer le groupe NO<sub>2</sub></label>
+  </div>
+
+  <!-- controles : surfaces -->
+  <div class="controls" id="ctl-surf" hidden>
+    <div class="seg" role="group" aria-label="Structure">
+      <button aria-pressed="true" data-struct="ceo2_bare">CeO₂(111) seule</button>
+      <button aria-pressed="false" data-struct="ceo2_mp">+ méthyl-parathion</button>
+      <button aria-pressed="false" data-struct="ceo2_imi">+ imidaclopride</button>
+    </div>
+    <div class="seg" role="group" aria-label="Répétition">
+      <button aria-pressed="true" data-rep="1">1 maille</button>
+      <button aria-pressed="false" data-rep="2">2 × 2</button>
+    </div>
+    <div class="seg" role="group" aria-label="Style">
+      <button aria-pressed="true" data-style="bs">Boules et bâtons</button>
+      <button aria-pressed="false" data-style="sp">Sphères compactes</button>
+    </div>
+    <button class="btn" id="v-side" type="button">Vue de côté</button>
+    <button class="btn" id="v-top" type="button">Vue de dessus</button>
+  </div>
+
+  <div class="main">
+    <div id="view"><div id="status">Chargement…</div></div>
+    <aside class="card" aria-live="polite">
+      <h2 id="c-title"></h2>
+      <dl id="c-dl"></dl>
+      <div class="bar" id="c-barbox" aria-hidden="true"><span id="c-bar"></span></div>
+      <div class="legend" id="c-legend"></div>
+      <p class="note" id="c-note"></p>
+    </aside>
+  </div>
+
+  <footer>
+    <p id="foot-orb">Orbitales : B3LYP-D3(BJ)/6-311+G(d,p) (Psi4) sur le conformère le plus stable. Poids sur NO<sub>2</sub> : population de Mulliken de l'orbitale sommée sur N et les deux O du groupe nitro. Grille allégée à 0,30 bohr pour l'affichage.</p>
+    <p id="foot-surf" hidden>Surfaces : CeO₂(111) p(3×3), deux tricouches O–Ce–O, PBE+U (U = 5 eV) + D3(BJ), Quantum ESPRESSO. La répétition 2 × 2 montre les images périodiques du calcul : dans les modèles adsorbés, chaque maille p(3×3) porte une molécule. La géométrie de l'imidaclopride est provisoire (relaxation en cours).</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js"></script>
+<script>
+// ------------------------------------------------------------------ donnees descriptives
+const ORB = {
+  methyl_parathion: { name: "méthyl-parathion", homo: -7.266, lumo: -2.916, w: 0.66, no2: [13, 14, 15],
+    note: { LUMO: "π* du nitrobenzène : N et les deux O du groupe nitro, plus les carbones en ortho du NO2 et le carbone para (C–O–P). La partie thiophosphate n'y participe presque pas.",
+            HOMO: "Localisée à 71 % sur le soufre du groupe P=S (doublets non liants) : le site donneur est distinct du site accepteur –NO2." } },
+  imidacloprid: { name: "imidaclopride", homo: -7.319, lumo: -2.097, w: 0.70, no2: [12, 13, 14],
+    note: { LUMO: "π* du groupe nitroimine =N–NO2 : N et O du nitro, puis le carbone C=N. Le cycle chloropyridine n'y participe pas.",
+            HOMO: "π du motif nitroimino (44 % sur NO2, plus les azotes imine et amine) : ce groupe est à la fois donneur et accepteur." } },
+};
+const COLORS = { Ce: "#e8d48a", O: "#d83a34", C: "#6b6b6b", N: "#3157d6", P: "#f08c1a", S: "#e6c200", Cl: "#2fbf3a", H: "#f4f4f4" };
+const NAMES = { Ce: "cérium", O: "oxygène", C: "carbone", N: "azote", P: "phosphore", S: "soufre", Cl: "chlore", H: "hydrogène" };
+const SURF = {
+  ceo2_bare: { title: "CeO₂(111) seule",
+    rows: [["Maille", "p(3×3), 11,65 Å"], ["Composition", "Ce₁₈O₃₆ (54 atomes)"], ["Épaisseur", "2 tricouches O–Ce–O"],
+           ["Terminaison", "oxygène"], ["Paramètre a", "5,492 Å (exp. 5,411)"]],
+    els: ["Ce", "O"],
+    note: "Surface (111) de la cérine : chaque Ce de surface est entouré de 7 O (8 dans le massif). La tricouche du bas est gelée à la géométrie du massif, celle du haut est relaxée." },
+  ceo2_mp: { title: "CeO₂(111) + méthyl-parathion",
+    rows: [["Atomes", "54 (dalle) + 26 (molécule)"], ["Géométrie", "debout, NO₂ vers un Ce"], ["E_ads", "−0,22 eV"],
+           ["O(nitro)–Ce", "2,86 Å"], ["Transfert de charge", "< 0,05 e"], ["π*(NO₂)", "0,20 eV sous la bande Ce 4f"]],
+    els: ["Ce", "O", "C", "N", "P", "S", "H"],
+    note: "Physisorption : le groupe nitro se place au-dessus d'un Ce de surface sans former de liaison chimique. La molécule est dessinée avec des bâtons plus épais." },
+  ceo2_imi: { title: "CeO₂(111) + imidaclopride (provisoire)",
+    rows: [["Atomes", "54 (dalle) + 27 (molécule)"], ["Géométrie", "inclinée, nitroimine vers un Ce"], ["E_ads (provisoire)", "−0,78 eV, encore en baisse"],
+           ["O(nitro)–Ce", "2,60 Å"], ["Liaison H", "N–H···O(surface), 2,06 Å"], ["Statut", "relaxation en cours (81 pas)"]],
+    els: ["Ce", "O", "C", "N", "Cl", "H"],
+    note: "Géométrie provisoire : dernière étape disponible d'une relaxation encore en cours. L'imidaclopride se lie plus fortement que le méthyl-parathion : un O du groupe nitroimine se place près d'un Ce de surface et le N–H du cycle forme une liaison hydrogène avec un O de surface." },
+};
+
+// ------------------------------------------------------------------ etat et utilitaires
+const state = { mode: "orb", mol: "methyl_parathion", orb: "LUMO", iso: 0.03, hl: true, struct: "ceo2_bare", rep: "1", style: "bs" };
+const cache = {};
+let SURFDATA = null;
+let viewer = null;
+const $ = id => document.getElementById(id);
+const status = $("status");
+const fr = (x, n = 2) => x.toFixed(n).replace(".", ",").replace("-", "−");
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+async function getText(url) {
+  if (!cache[url]) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`${url} introuvable (${r.status})`);
+    cache[url] = await r.text();
+  }
+  return cache[url];
+}
+
+function showError(msg) {
+  status.hidden = false;
+  status.textContent = location.protocol === "file:"
+    ? "Les données ne peuvent pas être lues en ouvrant le fichier directement : servez le dossier (GitHub Pages, ou « python -m http.server » puis http://localhost:8000)."
+    : msg;
+}
+
+function resetViewer() {
+  if (!viewer) viewer = $3Dmol.createViewer("view", { backgroundColor: css("--canvas") || "#ffffff" });
+  viewer.setBackgroundColor(css("--canvas") || "#ffffff");
+  viewer.removeAllModels(); viewer.removeAllShapes(); viewer.removeAllSurfaces(); viewer.removeAllLabels();
+}
+
+// ------------------------------------------------------------------ fiche
+function card() {
+  const dl = $("c-dl"), legend = $("c-legend");
+  if (state.mode === "orb") {
+    const m = ORB[state.mol];
+    $("c-title").textContent = `${state.orb} · ${m.name}`;
+    dl.innerHTML = [["Énergie", fr(state.orb === "LUMO" ? m.lumo : m.homo) + " eV"], ["HOMO", fr(m.homo) + " eV"],
+                    ["LUMO", fr(m.lumo) + " eV"], ["Écart HOMO–LUMO", fr(m.lumo - m.homo) + " eV"],
+                    ["Poids du LUMO sur NO₂", Math.round(m.w * 100) + " %"]]
+      .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+    $("c-barbox").hidden = false;
+    $("c-bar").style.width = Math.round(m.w * 100) + "%";
+    legend.innerHTML = `<span><span class="dot" style="background:var(--pos)"></span>lobe +</span>`
+                     + `<span><span class="dot" style="background:var(--neg)"></span>lobe −</span>`;
+    $("c-note").textContent = m.note[state.orb];
+  } else {
+    const I = SURF[state.struct];
+    $("c-title").textContent = I.title;
+    dl.innerHTML = I.rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+    $("c-barbox").hidden = true;
+    legend.innerHTML = I.els.map(e =>
+      `<span><span class="dot" style="background:${COLORS[e]}"></span>${e} <span style="opacity:.7">(${NAMES[e]})</span></span>`).join("");
+    $("c-note").textContent = I.note;
+  }
+}
+
+// ------------------------------------------------------------------ rendu : orbitales
+async function drawOrb(resetView) {
+  status.hidden = false; status.textContent = "Chargement de l'orbitale…";
+  let data;
+  try { data = await getText(`data/orbitals/${state.mol}_${state.orb}.cube`); }
+  catch (e) { showError("Impossible de charger l'orbitale : " + e.message); return; }
+  resetViewer();
+  const model = viewer.addModel(data, "cube");
+  model.setStyle({}, { stick: { radius: 0.13 }, sphere: { scale: 0.22 } });
+  if (state.hl) model.setStyle({ index: ORB[state.mol].no2 }, { stick: { radius: 0.13 }, sphere: { scale: 0.34 } });
+  const vol = new $3Dmol.VolumeData(data, "cube");
+  viewer.addIsosurface(vol, { isoval: state.iso, color: css("--pos"), alpha: 0.82, smoothness: 3 });
+  viewer.addIsosurface(vol, { isoval: -state.iso, color: css("--neg"), alpha: 0.82, smoothness: 3 });
+  if (resetView) { viewer.setView([0, 0, 0, 0, 0, 0, 0, 1]); viewer.zoomTo(); viewer.zoom(1.35); }
+  viewer.render();
+  status.hidden = true;
+}
+
+// ------------------------------------------------------------------ rendu : surfaces
+function cellOutline(cell, z) {
+  const [a, b] = cell;
+  const pts = [[0, 0], [a[0], a[1]], [a[0] + b[0], a[1] + b[1]], [b[0], b[1]], [0, 0]];
+  for (let i = 0; i < 4; i++) {
+    viewer.addLine({ start: { x: pts[i][0], y: pts[i][1], z }, end: { x: pts[i + 1][0], y: pts[i + 1][1], z },
+                     color: css("--muted") || "#888", dashed: true });
+  }
+}
+
+function sideView() {
+  viewer.setView([0, 0, 0, 0, 0, 0, 0, 1]); viewer.zoomTo();
+  viewer.rotate(-75, "x"); viewer.rotate(15, "y"); viewer.zoom(1.15); viewer.render();
+}
+function topView() { viewer.setView([0, 0, 0, 0, 0, 0, 0, 1]); viewer.zoomTo(); viewer.zoom(1.1); viewer.render(); }
+
+async function drawSurf(resetView) {
+  status.hidden = false; status.textContent = "Chargement de la structure…";
+  try { if (!SURFDATA) SURFDATA = JSON.parse(await getText("data/surfaces.json")); }
+  catch (e) { showError("Impossible de charger les structures : " + e.message); return; }
+  const d = SURFDATA[state.struct][state.rep];
+  resetViewer();
+  const m = viewer.addModel(d.xyz, "xyz");
+  const colorfunc = a => COLORS[a.elem] || "#cccccc";
+  if (state.style === "bs") {
+    m.setStyle({}, { sphere: { scale: 0.3, colorfunc }, stick: { radius: 0.12, colorfunc } });
+    if (d.mol.length) m.setStyle({ index: d.mol }, { sphere: { scale: 0.32, colorfunc }, stick: { radius: 0.2, colorfunc } });
+  } else {
+    m.setStyle({}, { sphere: { scale: 1.0, colorfunc } });
+  }
+  m.setClickable({}, true, (atom, v) => {
+    v.removeAllLabels();
+    v.addLabel(`${atom.elem} (${NAMES[atom.elem] || ""})`, { position: atom, fontSize: 13, backgroundOpacity: 0.75 });
+    v.render();
+  });
+  cellOutline(d.cell, 0.4);
+  if (resetView) sideView(); else viewer.render();
+  status.hidden = true;
+}
+
+function draw(resetView) {
+  card();
+  if (!window.$3Dmol) { status.hidden = false; status.textContent = "La bibliothèque 3D n'a pas pu être chargée (connexion Internet requise)."; return; }
+  return state.mode === "orb" ? drawOrb(resetView) : drawSurf(resetView);
+}
+
+// ------------------------------------------------------------------ interactions
+function press(attr, value) {
+  document.querySelectorAll(`[${attr}]`).forEach(b => b.setAttribute("aria-pressed", String(b.getAttribute(attr) === value)));
+}
+document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+  state.mode = b.dataset.mode;
+  document.querySelectorAll("[data-mode]").forEach(t => t.setAttribute("aria-selected", String(t === b)));
+  $("ctl-orb").hidden = $("foot-orb").hidden = state.mode !== "orb";
+  $("ctl-surf").hidden = $("foot-surf").hidden = state.mode !== "surf";
+  try { history.replaceState(null, "", state.mode === "surf" ? "#surfaces" : "#orbitales"); } catch (e) {}
+  draw(true);
+}));
+document.querySelectorAll("[data-mol]").forEach(b => b.addEventListener("click", () => { state.mol = b.dataset.mol; press("data-mol", state.mol); draw(true); }));
+document.querySelectorAll("[data-orb]").forEach(b => b.addEventListener("click", () => { state.orb = b.dataset.orb; press("data-orb", state.orb); draw(false); }));
+document.querySelectorAll("[data-struct]").forEach(b => b.addEventListener("click", () => { state.struct = b.dataset.struct; press("data-struct", state.struct); draw(true); }));
+document.querySelectorAll("[data-rep]").forEach(b => b.addEventListener("click", () => { state.rep = b.dataset.rep; press("data-rep", state.rep); draw(true); }));
+document.querySelectorAll("[data-style]").forEach(b => b.addEventListener("click", () => { state.style = b.dataset.style; press("data-style", state.style); draw(false); }));
+const iso = $("iso"), isoval = $("isoval");
+iso.addEventListener("input", () => { isoval.textContent = fr(+iso.value, 3); });
+iso.addEventListener("change", () => { state.iso = +iso.value; draw(false); });
+$("hl").addEventListener("change", e => { state.hl = e.target.checked; draw(false); });
+$("v-side").addEventListener("click", () => viewer && sideView());
+$("v-top").addEventListener("click", () => viewer && topView());
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw(false));
+new MutationObserver(() => draw(false)).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+// lien direct vers un onglet : index.html#surfaces
+if (location.hash === "#surfaces") $("tab-surf").click(); else draw(true);
+</script>
+</body>
+</html>
