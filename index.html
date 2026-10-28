@@ -132,7 +132,7 @@ footer p { margin: 0; }
 
   <footer>
     <p id="foot-orb">Orbitales : B3LYP-D3(BJ)/6-311+G(d,p) (Psi4) sur le conformère le plus stable. Poids sur NO<sub>2</sub> : population de Mulliken de l'orbitale sommée sur N et les deux O du groupe nitro. Grille allégée à 0,30 bohr pour l'affichage.</p>
-    <p id="foot-surf" hidden>Surfaces : CeO₂(111) p(3×3), deux tricouches O–Ce–O, PBE+U (U = 5 eV) + D3(BJ), Quantum ESPRESSO. La répétition 2 × 2 montre les images périodiques du calcul : dans les modèles adsorbés, chaque maille p(3×3) porte une molécule. La géométrie de l'imidaclopride est provisoire (relaxation en cours).</p>
+    <p id="foot-surf" hidden>Surfaces : CeO₂(111) p(3×3), deux tricouches O–Ce–O, PBE+U (U = 5 eV) + D3(BJ), Quantum ESPRESSO. La répétition 2 × 2 montre les images périodiques du calcul : dans les modèles adsorbés, chaque maille p(3×3) porte une molécule.</p>
   </footer>
 </div>
 
@@ -160,11 +160,12 @@ const SURF = {
            ["O(nitro)–Ce", "2,86 Å"], ["Transfert de charge", "< 0,05 e"], ["π*(NO₂)", "0,20 eV sous la bande Ce 4f"]],
     els: ["Ce", "O", "C", "N", "P", "S", "H"],
     note: "Physisorption : le groupe nitro se place au-dessus d'un Ce de surface sans former de liaison chimique. La molécule est dessinée avec des bâtons plus épais." },
-  ceo2_imi: { title: "CeO₂(111) + imidaclopride (provisoire)",
-    rows: [["Atomes", "54 (dalle) + 27 (molécule)"], ["Géométrie", "inclinée, nitroimine vers un Ce"], ["E_ads (provisoire)", "−0,78 eV, encore en baisse"],
-           ["O(nitro)–Ce", "2,60 Å"], ["Liaison H", "N–H···O(surface), 2,06 Å"], ["Statut", "relaxation en cours (81 pas)"]],
+  ceo2_imi: { title: "CeO₂(111) + imidaclopride",
+    rows: [["Atomes", "54 (dalle) + 27 (molécule)"], ["Géométrie", "inclinée, nitroimine vers un Ce"], ["E_ads", "−0,82 eV"],
+           ["O(nitro)–Ce", "2,67 Å"], ["Liaison H", "N–H···O(surface), 1,94 Å"], ["Transfert de charge", "< 0,1 e"],
+           ["π*(NO₂)", "≥ 0,56 eV au-dessus de la bande Ce 4f"]],
     els: ["Ce", "O", "C", "N", "Cl", "H"],
-    note: "Géométrie provisoire : dernière étape disponible d'une relaxation encore en cours. L'imidaclopride se lie plus fortement que le méthyl-parathion : un O du groupe nitroimine se place près d'un Ce de surface et le N–H du cycle forme une liaison hydrogène avec un O de surface." },
+    note: "Adsorption forte sans transfert de charge : un O du groupe nitroimine se place près d'un Ce de surface et le N–H du cycle forme une liaison hydrogène avec un O de surface. Relaxation arrêtée avant le critère de force : E_ads est une borne, probablement un peu trop haute." },
 };
 
 // ------------------------------------------------------------------ etat et utilitaires

@@ -36,9 +36,9 @@ puis ouvrez http://localhost:8000.
 | Système | E_ads | Remarque |
 |---|---|---|
 | Méthyl-parathion / CeO₂(111) | −0,22 eV | physisorption, O(nitro)–Ce 2,86 Å, transfert de charge < 0,05 e |
-| Imidaclopride / CeO₂(111) | −0,78 eV (provisoire) | relaxation en cours ; O(nitro)–Ce 2,60 Å, liaison H N–H···O(surface) 2,06 Å |
+| Imidaclopride / CeO₂(111) | −0,82 eV | O(nitro)–Ce 2,67 Å, liaison H N–H···O(surface) 1,94 Å, transfert de charge < 0,1 e |
 
-Les relaxations des systèmes adsorbés n'ont pas atteint le critère de force (surfaces d'énergie très plates) ; la géométrie et l'énergie de l'imidaclopride sont provisoires.
+Les relaxations des systèmes adsorbés n'ont pas atteint le critère de force (surfaces d'énergie très plates) : les E_ads sont fiables à environ 0,01 eV (méthyl-parathion) et constituent une borne pour l'imidaclopride, dont l'énergie baissait encore lentement.
 
 ## Références logicielles
 
